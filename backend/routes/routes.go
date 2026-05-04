@@ -1,10 +1,11 @@
 package routes
 
 import (
-	"forumium/handlers"
-	"net/http"
+	"github.com/enzo959/forumium/handlers"
+
+	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/health", handlers.HealthCheck)
+func SetupRoutes(router *gin.Engine) {
+	router.GET("/api/health", handlers.HealthCheck)
 }
