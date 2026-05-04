@@ -1,12 +1,12 @@
 ##---- ÉTAPE 1 : Compilation ----
 
-FROM golang:1.26-alpine
+FROM golang:1.26-alpine AS builder
 
 #DÉFINIR un dossier de travail dans le conteneur (ex: /app)
 WORKDIR /app
-##COPIER les fichiers go.mod et go.sum en premier
+#COPIER les fichiers go.mod et go.sum en premier
     #→ go.mod = liste des dépendances de ton projet
-COPY go.mod && go.sum ./
+COPY go.mod go.sum ./
 
 #TÉLÉCHARGER les dépendances Go
     #→ commande : go mod download
