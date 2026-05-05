@@ -8,8 +8,5 @@ import (
 
 func SetupRoutes(router *gin.Engine) {
 	router.GET("/api/health", handlers.HealthCheck)
-}
-
-func SetupforgotPasswordRoutes(router *gin.Engine) {
-	router.GET("/api/auth/forgot-password", handlers.forgotPassword)
+	router.POST("/api/auth/forgot-password", handlers.ForgotPassword)
 }
