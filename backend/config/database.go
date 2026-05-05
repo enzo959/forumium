@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-
+	"github.com/enzo959/forumium/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -32,4 +32,19 @@ func ConnectDatabase() {
 	DB = database
 
 	log.Println("Database connected successfully")
+	err = DB.AutoMigrate(
+		&models.User{},
+		&models.Post{},
+		&models.Comment{},
+		&models.Reaction{},
+		&models.Category{},
+		&models.PasswordReset{},
+		&models.RefreshToken{},
+	)
+	if err != nil {
+		log.Fatal("Failed to migrate database:", err)
+	}
+
+	log.Println("Database migrated successfully")
 }
+
