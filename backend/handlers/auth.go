@@ -235,3 +235,134 @@ func Login(c *gin.Context) {
 		},
 	})
 }
+
+type RefreshInput struct {
+	RefreshToken string `json:"refresh_token"`
+	UserID       uint   `json:"user_id"`
+}
+
+func Refresh(c *gin.Context) {
+	var input RefreshInput
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "JSON invalide",
+		})
+		return
+	}
+
+	if input.RefreshToken == "" || input.UserID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "refresh_token et user_id requis",
+		})
+		return
+	}
+
+	var tokens []models.RefreshToken
+
+	result := config.DB.Where(
+		"user_id = ? AND revoked = ? AND expires_at > ?",
+		input.UserID, false, time.Now(),
+	).Find(&tokens)
+
+	if result.Error != nil || len(tokens) == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "token invalide",
+		})
+		return
+	}
+
+	var validToken *models.RefreshToken
+
+	for _, t := range tokens {
+		err := bcrypt.CompareHashAndPassword(
+			[]byte(t.Token),
+			[]byte(input.RefreshToken),
+		)
+
+		if err == nil {
+			validToken = &t
+			break
+		}
+	}
+
+	if validToken == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "token invalide",
+		})
+		return
+	}
+
+	if validToken.ExpiresAt.Before(time.Now()) {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "token expiré",
+		})
+		return
+	}
+
+	result = config.DB.Model(validToken).Update("revoked", true)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur révocation token",
+		})
+		return
+	}
+
+	var user models.User
+	result = config.DB.First(&user, validToken.UserID)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "utilisateur introuvable",
+		})
+		return
+	}
+
+	userID := strconv.Itoa(int(user.ID))
+
+	accessToken, err := config.GenerateAccessToken(userID, user.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur génération access token",
+		})
+		return
+	}
+
+	refreshToken, err := config.GenerateRefreshToken()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur génération refresh token",
+		})
+		return
+	}
+
+	hashedRefreshToken, err := bcrypt.GenerateFromPassword(
+		[]byte(refreshToken),
+		bcrypt.DefaultCost,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur hash refresh token",
+		})
+		return
+	}
+
+	newToken := models.RefreshToken{
+		UserID:    user.ID,
+		Token:     string(hashedRefreshToken),
+		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
+		Revoked:   false,
+	}
+
+	result = config.DB.Create(&newToken)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur sauvegarde refresh token",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
+}

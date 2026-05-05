@@ -10,4 +10,5 @@ func SetupRoutes(router *gin.Engine) {
 
 	router.POST("/api/auth/register", handlers.Register)
 	router.POST("/api/auth/login", handlers.Login)
+	router.POST("/api/auth/refresh", handlers.Refresh)
 }
