@@ -366,3 +366,83 @@ func Refresh(c *gin.Context) {
 		"refresh_token": refreshToken,
 	})
 }
+
+// ================================
+// 🚪 LOGOUT
+// ================================
+
+type LogoutInput struct {
+	RefreshToken string `json:"refresh_token"`
+	UserID       uint   `json:"user_id"`
+}
+
+func Logout(c *gin.Context) {
+	var input LogoutInput
+
+	// ÉTAPE 1 - Parser JSON
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "JSON invalide",
+		})
+		return
+	}
+
+	// ÉTAPE 2 - Validation
+	if input.RefreshToken == "" || input.UserID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "refresh_token et user_id requis",
+		})
+		return
+	}
+
+	// ÉTAPE 3 - Récupérer tokens valides
+	var tokens []models.RefreshToken
+
+	result := config.DB.Where(
+		"user_id = ? AND revoked = ? AND expires_at > ?",
+		input.UserID, false, time.Now(),
+	).Find(&tokens)
+
+	if result.Error != nil || len(tokens) == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "token invalide",
+		})
+		return
+	}
+
+	// ÉTAPE 4 - Trouver le bon token (bcrypt)
+	var validToken *models.RefreshToken
+
+	for _, t := range tokens {
+		err := bcrypt.CompareHashAndPassword(
+			[]byte(t.Token),
+			[]byte(input.RefreshToken),
+		)
+
+		if err == nil {
+			validToken = &t
+			break
+		}
+	}
+
+	if validToken == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "token invalide",
+		})
+		return
+	}
+
+	// ÉTAPE 5 - Révoquer le token
+	result = config.DB.Model(validToken).Update("revoked", true)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur révocation token",
+		})
+		return
+	}
+
+	// ÉTAPE 6 - Réponse
+	c.JSON(http.StatusOK, gin.H{
+		"message": "déconnecté avec succès",
+	})
+}
