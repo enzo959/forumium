@@ -126,3 +126,112 @@ func Register(c *gin.Context) {
 		"refresh_token": refreshToken,
 	})
 }
+
+type LoginInput struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func Login(c *gin.Context) {
+	var input LoginInput
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "JSON invalide",
+		})
+		return
+	}
+
+	if input.Email == "" || input.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "email et password requis",
+		})
+		return
+	}
+
+	var user models.User
+	result := config.DB.Where("email = ?", input.Email).First(&user)
+
+	if result.Error != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "identifiants invalides",
+		})
+		return
+	}
+
+	err := bcrypt.CompareHashAndPassword(
+		[]byte(user.Password),
+		[]byte(input.Password),
+	)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "identifiants invalides",
+		})
+		return
+	}
+
+	userID := strconv.Itoa(int(user.ID))
+
+	accessToken, err := config.GenerateAccessToken(userID, user.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur génération access token",
+		})
+		return
+	}
+
+	refreshToken, err := config.GenerateRefreshToken()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur génération refresh token",
+		})
+		return
+	}
+
+	hashedRefreshToken, err := bcrypt.GenerateFromPassword(
+		[]byte(refreshToken),
+		bcrypt.DefaultCost,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur hash refresh token",
+		})
+		return
+	}
+
+	result = config.DB.Model(&models.RefreshToken{}).
+		Where("user_id = ? AND revoked = ?", user.ID, false).
+		Update("revoked", true)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur révocation anciens tokens",
+		})
+		return
+	}
+
+	tokenRecord := models.RefreshToken{
+		UserID:    user.ID,
+		Token:     string(hashedRefreshToken),
+		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
+		Revoked:   false,
+	}
+
+	result = config.DB.Create(&tokenRecord)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur sauvegarde refresh token",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+		"user": gin.H{
+			"id":       user.ID,
+			"username": user.UserName,
+			"email":    user.Email,
+		},
+	})
+}

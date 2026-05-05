@@ -9,4 +9,5 @@ func SetupRoutes(router *gin.Engine) {
 	router.GET("/api/health", handlers.HealthCheck)
 
 	router.POST("/api/auth/register", handlers.Register)
+	router.POST("/api/auth/login", handlers.Login)
 }
