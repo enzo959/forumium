@@ -2,6 +2,10 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/enzo959/forumium/models"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -38,8 +42,8 @@ func Register(c *gin.Context) {
 		})
 		return
 	}
-	//hashedPassword
-	_, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "erreur lors du hash du mot de passe",
@@ -47,13 +51,32 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// ÉTAPE 4 - Créer l'user en base
-	// TODO: sauvegarder l'utilisateur en base
-	// ex: user := models.User{Email: input.Email, Password: string(hashedPassword)}
-	// db.Create(&user)
+	var existingUser models.User
+	result := config.DB.Where("email = ?", input.Email).First(&existingUser)
 
-	// FAKE userID pour l'instant
-	userID := "1"
+	if result.Error == nil {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "email déjà utilisé",
+		})
+		return
+	}
+
+	user := models.User{
+		UserName: input.Username,
+		Email:    input.Email,
+		Password: string(hashedPassword),
+		Avatar:   "",
+	}
+
+	result = config.DB.Create(&user)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur création utilisateur",
+		})
+		return
+	}
+
+	userID := strconv.Itoa(int(user.ID))
 
 	accessToken, err := config.GenerateAccessToken(userID, input.Email)
 	if err != nil {
@@ -67,6 +90,32 @@ func Register(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "erreur génération refresh token",
+		})
+		return
+	}
+
+	hashedRefreshToken, err := bcrypt.GenerateFromPassword(
+		[]byte(refreshToken),
+		bcrypt.DefaultCost,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur hash refresh token",
+		})
+		return
+	}
+
+	tokenRecord := models.RefreshToken{
+		UserID:    user.ID,
+		Token:     string(hashedRefreshToken),
+		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
+		Revoked:   false,
+	}
+
+	result = config.DB.Create(&tokenRecord)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "erreur sauvegarde refresh token",
 		})
 		return
 	}
