@@ -13,4 +13,5 @@ func SetupRoutes(router *gin.Engine) {
 	router.POST("/api/auth/refresh", handlers.Refresh)
 	router.POST("/api/auth/logout", handlers.Logout)
 	router.POST("/api/auth/forgot-password", handlers.ForgotPassword)
+	router.POST("/api/auth/reset-password", handlers.ResetPassword)
 }
