@@ -16,10 +16,12 @@ func SetupRoutes(router *gin.Engine) {
 	auth.POST("/login", handlers.Login)
 	auth.POST("/refresh", handlers.Refresh)
 	auth.POST("/forgot-password", handlers.ForgotPassword)
+	auth.POST("reset-password", handlers.ResetPassword)
 
 	protected := router.Group("/api")
 	protected.Use(middleware.AuthRequired())
-
 	protected.POST("/auth/logout", handlers.Logout)
+	
+
 
 }
