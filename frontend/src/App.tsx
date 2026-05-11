@@ -3,6 +3,8 @@ import Home from './pages/Home'
 import NotFound from './pages/NotFound.tsx'
 import ForgotPassword from './pages/ForgotPassword.tsx'
 import ResetPassword from './pages/ResetPassword.tsx'
+import Login from './pages/Login.tsx'
+import Register from './pages/connection.tsx'
 
 function App() {
   return (
@@ -10,6 +12,8 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="forgot-password" element={<ForgotPassword />} />
       <Route path="reset-password" element={<ResetPassword />} />
+      <Route path="login" element={<Login />} />
+      <Route path="register" element={<Register />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   )
