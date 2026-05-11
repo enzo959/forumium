@@ -51,12 +51,22 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// Vérification email déjà utilisé
 	var existingUser models.User
 	result := config.DB.Where("email = ?", input.Email).First(&existingUser)
-
 	if result.Error == nil {
 		c.JSON(http.StatusConflict, gin.H{
 			"error": "email déjà utilisé",
+		})
+		return
+	}
+
+	// Vérification username déjà utilisé
+	var existingUsername models.User
+	result = config.DB.Where("username = ?", input.Username).First(&existingUsername)
+	if result.Error == nil {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "nom d'utilisateur déjà utilisé",
 		})
 		return
 	}
@@ -124,6 +134,11 @@ func Register(c *gin.Context) {
 		"message":       "utilisateur créé",
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
+		"user": gin.H{
+			"id":       user.ID,
+			"username": user.UserName,
+			"email":    user.Email,
+		},
 	})
 }
 
@@ -379,7 +394,6 @@ type LogoutInput struct {
 func Logout(c *gin.Context) {
 	var input LogoutInput
 
-	// ÉTAPE 1 - Parser JSON
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "JSON invalide",
@@ -387,7 +401,6 @@ func Logout(c *gin.Context) {
 		return
 	}
 
-	// ÉTAPE 2 - Validation
 	if input.RefreshToken == "" || input.UserID == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "refresh_token et user_id requis",
@@ -395,7 +408,6 @@ func Logout(c *gin.Context) {
 		return
 	}
 
-	// ÉTAPE 3 - Récupérer tokens valides
 	var tokens []models.RefreshToken
 
 	result := config.DB.Where(
@@ -410,7 +422,6 @@ func Logout(c *gin.Context) {
 		return
 	}
 
-	// ÉTAPE 4 - Trouver le bon token (bcrypt)
 	var validToken *models.RefreshToken
 
 	for _, t := range tokens {
@@ -432,7 +443,6 @@ func Logout(c *gin.Context) {
 		return
 	}
 
-	// ÉTAPE 5 - Révoquer le token
 	result = config.DB.Model(validToken).Update("revoked", true)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -441,7 +451,6 @@ func Logout(c *gin.Context) {
 		return
 	}
 
-	// ÉTAPE 6 - Réponse
 	c.JSON(http.StatusOK, gin.H{
 		"message": "déconnecté avec succès",
 	})
