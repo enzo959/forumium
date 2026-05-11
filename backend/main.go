@@ -10,6 +10,7 @@ import (
 
 	"github.com/enzo959/forumium/config"
 	"github.com/enzo959/forumium/routes"
+	"github.com/enzo959/forumium/migrations"
 )
 
 func main() {
@@ -18,6 +19,7 @@ func main() {
 		log.Println("Warning: no .env file found")
 	}
 	config.ConnectDatabase()
+	migrations.SeedCategories(config.DB)
 
 	router := gin.Default()
 
