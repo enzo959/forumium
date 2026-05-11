@@ -9,6 +9,8 @@ import (
 func SetupRoutes(router *gin.Engine) {
 
 	router.GET("/api/health", handlers.HealthCheck)
+	router.GET("/api/posts", handlers.GetPosts)
+
 
 	auth := router.Group("/api/auth")
 
