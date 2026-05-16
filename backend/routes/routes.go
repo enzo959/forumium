@@ -10,6 +10,7 @@ func SetupRoutes(router *gin.Engine) {
 
 	router.GET("/api/health", handlers.HealthCheck)
 	router.GET("/api/posts", handlers.GetPosts)
+	router.GET("/api/categories", handlers.GetCategories)
 
 
 	auth := router.Group("/api/auth")
