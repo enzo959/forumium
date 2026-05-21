@@ -67,6 +67,32 @@ function Home() {
         {!loading && !error && posts.length === 0 && (
           <p className="text-gray-400 text-sm">Aucun post pour le moment.</p>
         )}
+        <div className="flex flex-col gap-4">
+          {posts.map((post) => (
+            <div key={post.ID} className="bg-white rounded shadow-sm p-5 hover:shadow-md transition">
+              <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                {post.Title}
+              </h3>
+              <p className="text-sm text-gray-400 mb-3">
+                Par <span className="font-medium text-gray-600">{post.User?.username}</span>
+                {' · '}
+                {new Date(post.CreatedAt).toLocaleDateString('fr-FR')}
+              </p>
+              {post.Categories && post.Categories.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {post.Categories.map((cat) => (
+                    <span
+                      key={cat.Name}
+                      className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded-full"
+                    >
+                      {cat.Name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </main>
     </div>
   )
