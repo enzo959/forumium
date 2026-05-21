@@ -6,13 +6,13 @@ type Post = {
   Title: string
   Content: string
   User: { username: string }
-  Categories: { Name: string }[]
+  Categories: { name: string }[]
   CreatedAt: string
 }
 
 type Category = {
   ID: number
-  Name: string
+  name: string
 }
 
 const LIMIT = 10
@@ -57,7 +57,7 @@ function Home() {
 
   const filteredPosts = selectedCategory
     ? posts.filter((post) =>
-        post.Categories?.some((cat) => cat.Name === selectedCategory)
+        post.Categories?.some((cat) => cat.name === selectedCategory)
       )
     : posts
 
@@ -102,14 +102,14 @@ function Home() {
           {categories.map((cat) => (
             <button
               key={cat.ID}
-              onClick={() => { setSelectedCategory(cat.Name); setPage(1) }}
+              onClick={() => { setSelectedCategory(cat.name); setPage(1) }}
               className={`px-3 py-1 text-sm rounded-full border ${
-                selectedCategory === cat.Name
+                selectedCategory === cat.name
                   ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
               }`}
             >
-              {cat.Name}
+              {cat.name}
             </button>
           ))}
         </div>
@@ -140,10 +140,10 @@ function Home() {
                 <div className="flex flex-wrap gap-2">
                   {post.Categories.map((cat) => (
                     <span
-                      key={cat.Name}
+                      key={cat.name}
                       className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded-full"
                     >
-                      {cat.Name}
+                      {cat.name}
                     </span>
                   ))}
                 </div>
