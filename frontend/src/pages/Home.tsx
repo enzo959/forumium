@@ -15,37 +15,53 @@ type Category = {
   Name: string
 }
 
+const LIMIT = 10
+
 function Home() {
   const [posts, setPosts] = useState<Post[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCategories = async () => {
       try {
-        const [postsRes, categoriesRes] = await Promise.all([
-          axios.get('/api/posts'),
-          axios.get('/api/categories'),
-        ])
-        setPosts(postsRes.data.posts)
-        setCategories(categoriesRes.data.categories)
+        const res = await axios.get('/api/categories')
+        setCategories(res.data.categories)
       } catch {
-        setError('Erreur lors du chargement.')
+        console.error('Erreur chargement catégories')
+      }
+    }
+    fetchCategories()
+  }, [])
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const res = await axios.get(`/api/posts?page=${page}&limit=${LIMIT}`)
+        setPosts(res.data.posts)
+        setTotal(res.data.pagination.total)
+      } catch {
+        setError('Erreur lors du chargement des posts.')
       } finally {
         setLoading(false)
       }
     }
-
-    fetchData()
-  }, [])
+    fetchPosts()
+  }, [page])
 
   const filteredPosts = selectedCategory
     ? posts.filter((post) =>
         post.Categories?.some((cat) => cat.Name === selectedCategory)
       )
     : posts
+
+  const totalPages = Math.ceil(total / LIMIT)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,7 +90,7 @@ function Home() {
         </h2>
         <div className="flex flex-wrap gap-2 mb-6">
           <button
-            onClick={() => setSelectedCategory('')}
+            onClick={() => { setSelectedCategory(''); setPage(1) }}
             className={`px-3 py-1 text-sm rounded-full border ${
               selectedCategory === ''
                 ? 'bg-blue-600 text-white border-blue-600'
@@ -86,7 +102,7 @@ function Home() {
           {categories.map((cat) => (
             <button
               key={cat.ID}
-              onClick={() => setSelectedCategory(cat.Name)}
+              onClick={() => { setSelectedCategory(cat.Name); setPage(1) }}
               className={`px-3 py-1 text-sm rounded-full border ${
                 selectedCategory === cat.Name
                   ? 'bg-blue-600 text-white border-blue-600'
@@ -135,6 +151,27 @@ function Home() {
             </div>
           ))}
         </div>
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-8">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-40"
+            >
+              Précédent
+            </button>
+            <span className="px-4 py-2 text-sm text-gray-600">
+              Page {page} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-40"
+            >
+              Suivant
+            </button>
+          </div>
+        )}
       </main>
     </div>
   )
