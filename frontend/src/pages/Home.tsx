@@ -10,25 +10,42 @@ type Post = {
   CreatedAt: string
 }
 
+type Category = {
+  ID: number
+  Name: string
+}
+
 function Home() {
   const [posts, setPosts] = useState<Post[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const fetchPosts = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axios.get('/api/posts')
-        setPosts(res.data.posts)
+        const [postsRes, categoriesRes] = await Promise.all([
+          axios.get('/api/posts'),
+          axios.get('/api/categories'),
+        ])
+        setPosts(postsRes.data.posts)
+        setCategories(categoriesRes.data.categories)
       } catch {
-        setError('Erreur lors du chargement des posts.')
+        setError('Erreur lors du chargement.')
       } finally {
         setLoading(false)
       }
     }
 
-    fetchPosts()
+    fetchData()
   }, [])
+
+  const filteredPosts = selectedCategory
+    ? posts.filter((post) =>
+        post.Categories?.some((cat) => cat.Name === selectedCategory)
+      )
+    : posts
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -52,9 +69,34 @@ function Home() {
         </div>
       </header>
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
           Derniers posts
         </h2>
+        <div className="flex flex-wrap gap-2 mb-6">
+          <button
+            onClick={() => setSelectedCategory('')}
+            className={`px-3 py-1 text-sm rounded-full border ${
+              selectedCategory === ''
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
+            }`}
+          >
+            Tous
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.ID}
+              onClick={() => setSelectedCategory(cat.Name)}
+              className={`px-3 py-1 text-sm rounded-full border ${
+                selectedCategory === cat.Name
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
+              }`}
+            >
+              {cat.Name}
+            </button>
+          ))}
+        </div>
 
         {loading && (
           <p className="text-gray-500 text-sm">Chargement des posts...</p>
@@ -64,11 +106,11 @@ function Home() {
           <p className="text-red-500 text-sm">{error}</p>
         )}
 
-        {!loading && !error && posts.length === 0 && (
+        {!loading && !error && filteredPosts.length === 0 && (
           <p className="text-gray-400 text-sm">Aucun post pour le moment.</p>
         )}
         <div className="flex flex-col gap-4">
-          {posts.map((post) => (
+          {filteredPosts.map((post) => (
             <div key={post.ID} className="bg-white rounded shadow-sm p-5 hover:shadow-md transition">
               <h3 className="text-lg font-semibold text-gray-800 mb-1">
                 {post.Title}
