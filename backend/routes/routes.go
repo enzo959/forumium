@@ -12,6 +12,7 @@ func SetupRoutes(router *gin.Engine) {
 	router.GET("/api/posts", handlers.GetPosts)
 	router.GET("/api/categories", handlers.GetCategories)
 
+	router.GET("/api/posts/:id", handlers.GetPostByID)
 
 	auth := router.Group("/api/auth")
 
@@ -24,7 +25,5 @@ func SetupRoutes(router *gin.Engine) {
 	protected := router.Group("/api")
 	protected.Use(middleware.AuthRequired())
 	protected.POST("/auth/logout", handlers.Logout)
-	
-
 
 }
