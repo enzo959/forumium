@@ -84,6 +84,13 @@ function PostDetail() {
                 ))}
               </div>
             )}
+            {post.image && (
+              <img
+                src={`http://localhost:8080/${post.image}`}
+                alt={post.title}
+                className="w-full max-h-96 object-cover rounded mb-6"
+              />
+            )}
             <div
               className="prose max-w-none text-gray-700 border-t border-gray-100 pt-6"
               dangerouslySetInnerHTML={{ __html: post.content }}
