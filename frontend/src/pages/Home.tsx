@@ -3,8 +3,8 @@ import axios from '../api/axios'
 
 type Post = {
   ID: number
-  Title: string
-  Content: string
+  title: string
+  content: string
   User: { username: string }
   Categories: { name: string }[]
   CreatedAt: string
@@ -63,6 +63,11 @@ function Home() {
 
   const totalPages = Math.ceil(total / LIMIT)
 
+  const getExcerpt = (html: string) => {
+    const text = html?.replace(/<[^>]*>/g, '') || ''
+    return text.length > 200 ? text.slice(0, 200) + '...' : text
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
@@ -84,6 +89,7 @@ function Home() {
           </div>
         </div>
       </header>
+
       <main className="max-w-4xl mx-auto px-4 py-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
           Derniers posts
@@ -129,8 +135,11 @@ function Home() {
           {filteredPosts.map((post) => (
             <div key={post.ID} className="bg-white rounded shadow-sm p-5 hover:shadow-md transition">
               <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                {post.Title}
+                {post.title}
               </h3>
+              <p className="text-sm text-gray-600 mb-3">
+                {getExcerpt(post.content)}
+              </p>
               <p className="text-sm text-gray-400 mb-3">
                 Par <span className="font-medium text-gray-600">{post.User?.username}</span>
                 {' · '}
