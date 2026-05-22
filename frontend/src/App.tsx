@@ -5,7 +5,7 @@ import ForgotPassword from './pages/ForgotPassword.tsx'
 import ResetPassword from './pages/ResetPassword.tsx'
 import Login from './pages/Login.tsx'
 import Register from './pages/Register.tsx'
-import PostDetail from './pages/PostDetail'
+import PostDetail from './pages/PostDetail.tsx'
 
 function App() {
   return (
