@@ -86,7 +86,7 @@ function PostDetail() {
             )}
             {post.image && (
               <img
-                src={`http://localhost:8080/${post.image}`}
+                src={post.image}
                 alt={post.title}
                 className="w-full max-h-96 object-cover rounded mb-6"
               />
