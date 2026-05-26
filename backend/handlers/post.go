@@ -393,3 +393,58 @@ func UpdatePost(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response)
 }
+
+// À ajouter à la fin de post.go
+
+func DeletePost(c *gin.Context) {
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userIDStr, ok := userIDValue.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	parsedUserID, err := strconv.ParseUint(userIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	userID := uint(parsedUserID)
+
+	postIDRaw := c.Param("id")
+	parsedPostID, err := strconv.ParseUint(postIDRaw, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
+		return
+	}
+	postID := uint(parsedPostID)
+
+	var post models.Post
+	if err := config.DB.First(&post, postID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+
+	if post.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed to delete this post"})
+		return
+	}
+
+	if err := config.DB.Delete(&post).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete post"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Post successfully deleted",
+	})
+}
