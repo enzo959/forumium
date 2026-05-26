@@ -25,4 +25,6 @@ func SetupRoutes(router *gin.Engine) {
 	protected.POST("/auth/logout", handlers.Logout)
 	protected.POST("/posts", handlers.CreatePost)
 
+	protected.PUT("/posts/:id", handlers.UpdatePost)
+
 }
