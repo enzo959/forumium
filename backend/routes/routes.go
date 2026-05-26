@@ -26,5 +26,6 @@ func SetupRoutes(router *gin.Engine) {
 	protected.POST("/posts", handlers.CreatePost)
 
 	protected.PUT("/posts/:id", handlers.UpdatePost)
+	protected.DELETE("/posts/:id", handlers.DeletePost)
 
 }
