@@ -31,3 +31,10 @@ type CreatePostRequest struct {
 	Image       string `json:"image"`
 	CategoryIDs []uint `json:"category_ids"`
 }
+
+type UpdatePostRequest struct {
+	Title       string `json:"title"`
+	Content     string `json:"content"`
+	Image       string `json:"image"`
+	CategoryIDs []uint `json:"category_ids"`
+}

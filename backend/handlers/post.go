@@ -267,4 +267,6 @@ func CreatePost(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, response)
+
+	func UpdatePost(c *gin.Context)
 }
