@@ -25,5 +25,9 @@ func SetupRoutes(router *gin.Engine) {
 	protected := router.Group("/api")
 	protected.Use(middleware.AuthRequired())
 	protected.POST("/auth/logout", handlers.Logout)
+	protected.POST("/posts", handlers.CreatePost)
+
+	protected.PUT("/posts/:id", handlers.UpdatePost)
+	protected.DELETE("/posts/:id", handlers.DeletePost)
 
 }
