@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import RichTextEditor from '../components/RichTextEditor'
 import axios from '../api/axios'
 
@@ -10,6 +10,7 @@ type Category = {
 
 function PostForm() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const isEditing = !!id
 
   const [title, setTitle] = useState('')
@@ -20,7 +21,6 @@ function PostForm() {
   const [imagePreview, setImagePreview] = useState('')
   const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -87,7 +87,6 @@ function PostForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    setSuccess('')
 
     if (!title.trim()) {
       setError('Le titre est requis.')
@@ -114,7 +113,7 @@ function PostForm() {
           image: imageUrl,
           category_ids: selectedCategoryIDs,
         })
-        setSuccess('Post modifié avec succès !')
+        navigate('/')
       } else {
         await axios.post('/api/posts', {
           title,
@@ -122,12 +121,7 @@ function PostForm() {
           image: imageUrl,
           category_ids: selectedCategoryIDs,
         })
-        setSuccess('Post créé avec succès !')
-        setTitle('')
-        setContent('')
-        setSelectedCategoryIDs([])
-        setImageUrl('')
-        setImagePreview('')
+        navigate('/')
       }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Une erreur est survenue.')
@@ -217,7 +211,6 @@ function PostForm() {
             </div>
 
             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-            {success && <p className="text-green-600 text-sm mb-4">{success}</p>}
 
             <button
               type="submit"
