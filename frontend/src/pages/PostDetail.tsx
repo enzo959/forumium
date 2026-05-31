@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useLocation } from 'react-router-dom'
 import axios from '../api/axios'
 
 type Post = {
@@ -20,12 +20,15 @@ type Post = {
 
 function PostDetail() {
   const { id } = useParams()
+  const location = useLocation()
   const [post, setPost] = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     const fetchPost = async () => {
+      setLoading(true)
+      setError('')
       try {
         const res = await axios.get(`/api/posts/${id}`)
         setPost(res.data)
@@ -36,7 +39,7 @@ function PostDetail() {
       }
     }
     fetchPost()
-  }, [id])
+  }, [id, location.key])
 
   return (
     <div className="min-h-screen bg-gray-50">
