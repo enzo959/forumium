@@ -16,6 +16,9 @@ function PostForm() {
   const [content, setContent] = useState('')
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategoryIDs, setSelectedCategoryIDs] = useState<number[]>([])
+  const [imageUrl, setImageUrl] = useState('')
+  const [imagePreview, setImagePreview] = useState('')
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -34,6 +37,30 @@ function PostForm() {
     setSelectedCategoryIDs((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
     )
+  }
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    setError('')
+
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const res = await axios.post('/api/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+
+      setImageUrl(res.data.url)
+      setImagePreview(URL.createObjectURL(file))
+    } catch {
+      setError("Erreur lors de l'upload de l'image.")
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -91,6 +118,28 @@ function PostForm() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Image (optionnel)
+            </label>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/gif"
+              onChange={handleImageChange}
+              className="text-sm text-gray-600"
+            />
+            {uploading && (
+              <p className="text-sm text-gray-400 mt-1">Upload en cours...</p>
+            )}
+            {imagePreview && (
+              <img
+                src={imagePreview}
+                alt="Aperçu"
+                className="mt-3 max-h-48 rounded border border-gray-200"
+              />
+            )}
           </div>
 
           {error && (
