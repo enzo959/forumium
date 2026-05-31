@@ -22,6 +22,7 @@ const LIMIT = 10
 
 function Home() {
   const location = useLocation()
+  const { isAuthenticated } = useAuth()
   const [posts, setPosts] = useState<Post[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
@@ -75,6 +76,17 @@ function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+
+      {isAuthenticated && (
+        <div className="max-w-4xl mx-auto px-4 pt-6 flex justify-end">
+          <a
+            href="/posts/new"
+            className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
+          >
+            + Créer un post
+          </a>
+        </div>
+      )}
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
