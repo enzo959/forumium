@@ -35,6 +35,25 @@ function PostForm() {
     fetchCategories()
   }, [])
 
+  useEffect(() => {
+    if (!isEditing) return
+
+    const fetchPost = async () => {
+      try {
+        const res = await axios.get(`/api/posts/${id}`)
+        const post = res.data
+        setTitle(post.title)
+        setContent(post.content)
+        setImageUrl(post.image)
+        setImagePreview(post.image)
+        setSelectedCategoryIDs(post.categories.map((cat: any) => cat.id))
+      } catch {
+        setError('Erreur lors du chargement du post.')
+      }
+    }
+    fetchPost()
+  }, [id, isEditing])
+
   const toggleCategory = (id: number) => {
     setSelectedCategoryIDs((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
@@ -88,19 +107,28 @@ function PostForm() {
     setLoading(true)
 
     try {
-      await axios.post('/api/posts', {
-        title,
-        content,
-        image: imageUrl,
-        category_ids: selectedCategoryIDs,
-      })
-
-      setSuccess('Post créé avec succès !')
-      setTitle('')
-      setContent('')
-      setSelectedCategoryIDs([])
-      setImageUrl('')
-      setImagePreview('')
+      if (isEditing) {
+        await axios.put(`/api/posts/${id}`, {
+          title,
+          content,
+          image: imageUrl,
+          category_ids: selectedCategoryIDs,
+        })
+        setSuccess('Post modifié avec succès !')
+      } else {
+        await axios.post('/api/posts', {
+          title,
+          content,
+          image: imageUrl,
+          category_ids: selectedCategoryIDs,
+        })
+        setSuccess('Post créé avec succès !')
+        setTitle('')
+        setContent('')
+        setSelectedCategoryIDs([])
+        setImageUrl('')
+        setImagePreview('')
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Une erreur est survenue.')
     } finally {
@@ -196,7 +224,10 @@ function PostForm() {
               disabled={loading || uploading}
               className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
             >
-              {loading ? 'Publication en cours...' : 'Publier le post'}
+              {loading
+                ? isEditing ? 'Modification en cours...' : 'Publication en cours...'
+                : isEditing ? 'Modifier le post' : 'Publier le post'
+              }
             </button>
           </form>
         </div>
