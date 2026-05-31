@@ -269,7 +269,6 @@ func CreatePost(c *gin.Context) {
 	c.JSON(http.StatusCreated, response)
 }
 
-// À ajouter à la fin de post.go (en dehors de CreatePost !)
 
 func UpdatePost(c *gin.Context) {
 	userIDValue, exists := c.Get("userID")

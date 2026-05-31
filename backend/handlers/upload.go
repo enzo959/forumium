@@ -29,7 +29,15 @@ func UploadImage(c *gin.Context) {
 	}
 	defer file.Close()
 
-	contentType := header.Header.Get("Content-Type")
+	buffer := make([]byte, 512)
+	_, err = file.Read(buffer)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading file"})
+		return
+	}
+	contentType := http.DetectContentType(buffer)
+	file.Seek(0, 0)
+
 	if !allowedTypes[contentType] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Unauthorized file type (PNG, JPEG, GIF only)"})
 		return
@@ -37,6 +45,7 @@ func UploadImage(c *gin.Context) {
 
 	ext := strings.ToLower(filepath.Ext(header.Filename))
 	filename := time.Now().Format("20060102") + "_" + uuid.New().String() + ext
+
 	uploadDir := "uploads"
 	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating the uploads folder"})
