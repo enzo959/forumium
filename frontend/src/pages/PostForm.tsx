@@ -1,6 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import RichTextEditor from '../components/RichTextEditor'
+import axios from '../api/axios'
+
+type Category = {
+  ID: number
+  name: string
+}
 
 function PostForm() {
   const { id } = useParams()
@@ -8,7 +14,27 @@ function PostForm() {
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [categories, setCategories] = useState<Category[]>([])
+  const [selectedCategoryIDs, setSelectedCategoryIDs] = useState<number[]>([])
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get('/api/categories')
+        setCategories(res.data.categories)
+      } catch {
+        console.error('Erreur chargement catégories')
+      }
+    }
+    fetchCategories()
+  }, [])
+
+  const toggleCategory = (id: number) => {
+    setSelectedCategoryIDs((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -43,6 +69,28 @@ function PostForm() {
               Contenu
             </label>
             <RichTextEditor content={content} onChange={setContent} />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Catégories
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat.ID}
+                  type="button"
+                  onClick={() => toggleCategory(cat.ID)}
+                  className={`px-3 py-1 text-sm rounded-full border ${
+                    selectedCategoryIDs.includes(cat.ID)
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
           </div>
 
           {error && (
