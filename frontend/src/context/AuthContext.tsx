@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(data.user)
     setAccessToken(data.access_token)
 
+    localStorage.setItem("access_token", data.access_token)
     localStorage.setItem("refresh_token", data.refresh_token)
     localStorage.setItem("user_id", data.user.id.toString())
   }
@@ -57,6 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setUser(null)
     setAccessToken(null)
+    localStorage.removeItem("access_token")
     localStorage.removeItem("refresh_token")
     localStorage.removeItem("user_id")
   }
