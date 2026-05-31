@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import axios from '../api/axios'
 
 type Post = {
@@ -18,6 +19,7 @@ type Category = {
 const LIMIT = 10
 
 function Home() {
+  const location = useLocation()
   const [posts, setPosts] = useState<Post[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
@@ -53,7 +55,7 @@ function Home() {
       }
     }
     fetchPosts()
-  }, [page])
+  }, [page, location.key])
 
   const filteredPosts = selectedCategory
     ? posts.filter((post) =>
@@ -74,16 +76,10 @@ function Home() {
         <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-blue-600">Forum</h1>
           <div className="flex gap-3">
-            <a
-              href="/login"
-              className="px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded hover:bg-blue-50"
-            >
+            <a href="/login" className="px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded hover:bg-blue-50">
               Connexion
             </a>
-            <a
-              href="/register"
-              className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
-            >
+            <a href="/register" className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700">
               Inscription
             </a>
           </div>
@@ -94,6 +90,7 @@ function Home() {
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
           Derniers posts
         </h2>
+
         <div className="flex flex-wrap gap-2 mb-6">
           <button
             onClick={() => { setSelectedCategory(''); setPage(1) }}
@@ -120,17 +117,12 @@ function Home() {
           ))}
         </div>
 
-        {loading && (
-          <p className="text-gray-500 text-sm">Chargement des posts...</p>
-        )}
-
-        {error && (
-          <p className="text-red-500 text-sm">{error}</p>
-        )}
-
+        {loading && <p className="text-gray-500 text-sm">Chargement des posts...</p>}
+        {error && <p className="text-red-500 text-sm">{error}</p>}
         {!loading && !error && filteredPosts.length === 0 && (
           <p className="text-gray-400 text-sm">Aucun post pour le moment.</p>
         )}
+
         <div className="flex flex-col gap-4">
           {filteredPosts.map((post) => (
             <div key={post.ID} className="bg-white rounded shadow-sm p-5 hover:shadow-md transition">
@@ -160,6 +152,7 @@ function Home() {
             </div>
           ))}
         </div>
+
         {totalPages > 1 && (
           <div className="flex justify-center gap-2 mt-8">
             <button
