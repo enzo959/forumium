@@ -394,8 +394,6 @@ func UpdatePost(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// À ajouter à la fin de post.go
-
 func DeletePost(c *gin.Context) {
 	userIDValue, exists := c.Get("userID")
 	if !exists {
