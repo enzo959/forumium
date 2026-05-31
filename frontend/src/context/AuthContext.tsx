@@ -33,6 +33,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("access_token", data.access_token)
     localStorage.setItem("refresh_token", data.refresh_token)
     localStorage.setItem("user_id", data.user.id.toString())
+    localStorage.setItem("user_username", data.user.username)
+    localStorage.setItem("user_email", data.user.email)
   }
 
   const logout = async () => {
@@ -43,9 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (refreshToken && userId) {
         await fetch("/api/auth/logout", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             refresh_token: refreshToken,
             user_id: Number(userId),
@@ -61,21 +61,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("access_token")
     localStorage.removeItem("refresh_token")
     localStorage.removeItem("user_id")
+    localStorage.removeItem("user_username")
+    localStorage.removeItem("user_email")
   }
 
   useEffect(() => {
     const refreshToken = localStorage.getItem("refresh_token")
     const userId = localStorage.getItem("user_id")
+    const username = localStorage.getItem("user_username")
+    const email = localStorage.getItem("user_email")
 
-    if (!refreshToken || !userId) return
+    if (!refreshToken || !userId || !username || !email) return
 
     const refresh = async () => {
       try {
         const res = await fetch("/api/auth/refresh", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             refresh_token: refreshToken,
             user_id: Number(userId),
@@ -84,8 +86,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (!res.ok) throw new Error("Refresh failed")
 
-        const data: LoginResponse = await res.json()
-        login(data)
+        const data = await res.json()
+
+        // Reconstruit l'objet user depuis le localStorage
+        const restoredUser: User = {
+          id: Number(userId),
+          username,
+          email,
+        }
+
+        setUser(restoredUser)
+        setAccessToken(data.access_token)
+        localStorage.setItem("access_token", data.access_token)
+        localStorage.setItem("refresh_token", data.refresh_token)
       } catch (error) {
         logout()
       }
@@ -97,15 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAuthenticated = user !== null
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        accessToken,
-        login,
-        logout,
-        isAuthenticated,
-      }}
-    >
+    <AuthContext.Provider value={{ user, accessToken, login, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   )
@@ -113,10 +118,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
-
   if (!context) {
     throw new Error("useAuth doit être utilisé dans un AuthProvider")
   }
-
   return context
 }
