@@ -138,7 +138,7 @@ function Home() {
                 {new Date(post.CreatedAt).toLocaleDateString('fr-FR')}
               </p>
               {post.Categories && post.Categories.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-3">
                   {post.Categories.map((cat) => (
                     <span
                       key={cat.name}
@@ -149,6 +149,14 @@ function Home() {
                   ))}
                 </div>
               )}
+              <div className="flex justify-end">
+                <a
+                  href={`/posts/${post.ID}`}
+                  className="px-3 py-1 text-sm text-blue-600 border border-blue-600 rounded hover:bg-blue-50"
+                >
+                  Voir le post
+                </a>
+              </div>
             </div>
           ))}
         </div>
