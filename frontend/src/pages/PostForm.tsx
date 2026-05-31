@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
+import RichTextEditor from '../components/RichTextEditor'
 
 function PostForm() {
   const { id } = useParams()
   const isEditing = !!id
 
   const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
   const [error, setError] = useState('')
 
   return (
@@ -34,6 +36,13 @@ function PostForm() {
               placeholder="Titre de votre post"
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Contenu
+            </label>
+            <RichTextEditor content={content} onChange={setContent} />
           </div>
 
           {error && (
