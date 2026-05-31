@@ -19,6 +19,8 @@ function PostForm() {
   const [imageUrl, setImageUrl] = useState('')
   const [imagePreview, setImagePreview] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -63,6 +65,49 @@ function PostForm() {
     }
   }
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+
+    if (!title.trim()) {
+      setError('Le titre est requis.')
+      return
+    }
+
+    if (!content.trim()) {
+      setError('Le contenu est requis.')
+      return
+    }
+
+    if (selectedCategoryIDs.length === 0) {
+      setError('Sélectionnez au moins une catégorie.')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      await axios.post('/api/posts', {
+        title,
+        content,
+        image: imageUrl,
+        category_ids: selectedCategoryIDs,
+      })
+
+      setSuccess('Post créé avec succès !')
+      setTitle('')
+      setContent('')
+      setSelectedCategoryIDs([])
+      setImageUrl('')
+      setImagePreview('')
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Une erreur est survenue.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
@@ -77,74 +122,83 @@ function PostForm() {
         </h2>
 
         <div className="bg-white rounded shadow-sm p-6">
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Titre
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              placeholder="Titre de votre post"
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contenu
-            </label>
-            <RichTextEditor content={content} onChange={setContent} />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Catégories
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => (
-                <button
-                  key={cat.ID}
-                  type="button"
-                  onClick={() => toggleCategory(cat.ID)}
-                  className={`px-3 py-1 text-sm rounded-full border ${
-                    selectedCategoryIDs.includes(cat.ID)
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
-                  }`}
-                >
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Image (optionnel)
-            </label>
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/gif"
-              onChange={handleImageChange}
-              className="text-sm text-gray-600"
-            />
-            {uploading && (
-              <p className="text-sm text-gray-400 mt-1">Upload en cours...</p>
-            )}
-            {imagePreview && (
-              <img
-                src={imagePreview}
-                alt="Aperçu"
-                className="mt-3 max-h-48 rounded border border-gray-200"
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Titre
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                placeholder="Titre de votre post"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            )}
-          </div>
+            </div>
 
-          {error && (
-            <p className="text-red-500 text-sm mb-4">{error}</p>
-          )}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Contenu
+              </label>
+              <RichTextEditor content={content} onChange={setContent} />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Catégories
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.ID}
+                    type="button"
+                    onClick={() => toggleCategory(cat.ID)}
+                    className={`px-3 py-1 text-sm rounded-full border ${
+                      selectedCategoryIDs.includes(cat.ID)
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Image (optionnel)
+              </label>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/gif"
+                onChange={handleImageChange}
+                className="text-sm text-gray-600"
+              />
+              {uploading && (
+                <p className="text-sm text-gray-400 mt-1">Upload en cours...</p>
+              )}
+              {imagePreview && (
+                <img
+                  src={imagePreview}
+                  alt="Aperçu"
+                  className="mt-3 max-h-48 rounded border border-gray-200"
+                />
+              )}
+            </div>
+
+            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+            {success && <p className="text-green-600 text-sm mb-4">{success}</p>}
+
+            <button
+              type="submit"
+              disabled={loading || uploading}
+              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
+            >
+              {loading ? 'Publication en cours...' : 'Publier le post'}
+            </button>
+          </form>
         </div>
       </main>
     </div>
