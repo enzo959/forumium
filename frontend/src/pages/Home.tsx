@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import axios from '../api/axios'
 import { useAuth } from '../context/AuthContext'
+import Navbar from '../components/Navbar'
 
 type Post = {
   ID: number
@@ -21,7 +22,6 @@ const LIMIT = 10
 
 function Home() {
   const location = useLocation()
-  const { user, isAuthenticated, logout } = useAuth()
   const [posts, setPosts] = useState<Post[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
@@ -74,35 +74,7 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-blue-600">Forum</h1>
-          <div className="flex gap-3 items-center">
-            {isAuthenticated ? (
-              <>
-                <span className="text-sm text-gray-600 font-medium">
-                  {user?.username}
-                </span>
-                <button
-                  onClick={logout}
-                  className="px-4 py-2 text-sm text-red-600 border border-red-600 rounded hover:bg-red-50"
-                >
-                  Déconnexion
-                </button>
-              </>
-            ) : (
-              <>
-                <a href="/login" className="px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded hover:bg-blue-50">
-                  Connexion
-                </a>
-                <a href="/register" className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700">
-                  Inscription
-                </a>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
