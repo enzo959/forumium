@@ -8,6 +8,7 @@ type Post = {
   ID: number
   title: string
   content: string
+  image: string
   User: { username: string }
   Categories: { name: string }[]
   CreatedAt: string
@@ -128,6 +129,13 @@ function Home() {
         <div className="flex flex-col gap-4">
           {filteredPosts.map((post) => (
             <div key={post.ID} className="bg-white rounded shadow-sm p-5 hover:shadow-md transition">
+              {post.image && (
+                <img
+                  src={post.image}
+                  alt={post.title}
+                  className="w-full max-h-48 object-cover rounded mb-3"
+                />
+              )}
               <h3 className="text-lg font-semibold text-gray-800 mb-1">
                 {post.title}
               </h3>
