@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar'
 
 type Post = {
   ID: number
+  userId: number
   title: string
   content: string
   image: string
@@ -23,7 +24,7 @@ const LIMIT = 10
 
 function Home() {
   const location = useLocation()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const [posts, setPosts] = useState<Post[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
@@ -159,7 +160,15 @@ function Home() {
                   ))}
                 </div>
               )}
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                {isAuthenticated && user?.id === post.userId && (
+                  <a
+                    href={`/posts/${post.ID}/edit`}
+                    className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-100"
+                  >
+                    Modifier
+                  </a>
+                )}
                 <a
                   href={`/posts/${post.ID}`}
                   className="px-3 py-1 text-sm text-blue-600 border border-blue-600 rounded hover:bg-blue-50"
