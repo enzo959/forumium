@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import axios from '../api/axios'
 import Navbar from '../components/Navbar'
+import { useAuth } from '../context/AuthContext'
 
 type Post = {
   id: number
@@ -33,8 +34,12 @@ type Comment = {
 function PostDetail() {
   const { id } = useParams()
   const location = useLocation()
+  const { isAuthenticated, user } = useAuth()
   const [post, setPost] = useState<Post | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
+  const [newComment, setNewComment] = useState('')
+  const [commentError, setCommentError] = useState('')
+  const [commentLoading, setCommentLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -57,6 +62,27 @@ function PostDetail() {
     }
     fetchPost()
   }, [id, location.key])
+
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCommentError('')
+
+    if (!newComment.trim()) {
+      setCommentError('Le commentaire ne peut pas être vide.')
+      return
+    }
+
+    setCommentLoading(true)
+
+    try {
+      await axios.post(`/api/posts/${id}/comments`, { content: newComment })
+      setNewComment('')
+    } catch {
+      setCommentError('Erreur lors de l\'envoi du commentaire.')
+    } finally {
+      setCommentLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -97,11 +123,34 @@ function PostDetail() {
           </div>
         )}
 
-        {/* Section commentaires */}
         <div className="bg-white rounded shadow-sm p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
             Commentaires ({comments.length})
           </h2>
+
+          {isAuthenticated ? (
+            <form onSubmit={handleSubmitComment} className="mb-6">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Écrire un commentaire..."
+                rows={3}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+              />
+              {commentError && <p className="text-red-500 text-sm mb-2">{commentError}</p>}
+              <button
+                type="submit"
+                disabled={commentLoading}
+                className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                {commentLoading ? 'Envoi...' : 'Commenter'}
+              </button>
+            </form>
+          ) : (
+            <p className="text-sm text-gray-400 mb-6">
+              <a href="/login" className="text-blue-600 hover:underline">Connectez-vous</a> pour commenter.
+            </p>
+          )}
 
           {comments.length === 0 && (
             <p className="text-gray-400 text-sm">Aucun commentaire pour le moment.</p>
