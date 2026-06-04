@@ -1,23 +1,23 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/enzo959/forumium/models"
 	"github.com/enzo959/forumium/repositories"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func GetCommentsByPostID(c *gin.Context) {
 	rawID := c.Param("id")
-
 	parsedID, err := strconv.ParseUint(rawID, 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
 		return
 	}
-
 	postID := uint(parsedID)
 
 	comments, err := repositories.GetCommentsByPostID(postID)
@@ -38,7 +38,6 @@ func GetCommentsByPostID(c *gin.Context) {
 	}
 
 	result := []CommentResponse{}
-
 	for _, comment := range comments {
 		cr := CommentResponse{
 			ID:        comment.ID,
@@ -55,7 +54,6 @@ func GetCommentsByPostID(c *gin.Context) {
 }
 
 func CreateComment(c *gin.Context) {
-	// Récupère l'ID du post depuis l'URL
 	rawPostID := c.Param("id")
 	parsedPostID, err := strconv.ParseUint(rawPostID, 10, 32)
 	if err != nil {
@@ -64,7 +62,6 @@ func CreateComment(c *gin.Context) {
 	}
 	postID := uint(parsedPostID)
 
-	// Récupère l'ID de l'utilisateur connecté depuis le middleware
 	userIDValue, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -82,7 +79,6 @@ func CreateComment(c *gin.Context) {
 	}
 	userID := uint(parsedUserID)
 
-	// Valide le body
 	var req struct {
 		Content string `json:"content"`
 	}
@@ -111,4 +107,53 @@ func CreateComment(c *gin.Context) {
 		"content":    comment.Content,
 		"created_at": comment.CreatedAt,
 	})
+}
+
+func DeleteComment(c *gin.Context) {
+	rawID := c.Param("id")
+	parsedID, err := strconv.ParseUint(rawID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid comment ID"})
+		return
+	}
+	commentID := uint(parsedID)
+
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	userIDStr, ok := userIDValue.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	parsedUserID, err := strconv.ParseUint(userIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	userID := uint(parsedUserID)
+
+	comment, err := repositories.GetCommentByID(commentID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Comment not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+
+	if comment.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed to delete this comment"})
+		return
+	}
+
+	if err := repositories.DeleteComment(comment); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete comment"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Comment successfully deleted"})
 }
