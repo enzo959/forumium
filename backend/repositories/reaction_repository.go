@@ -29,7 +29,7 @@ func UpdateReaction(reaction *models.Reaction, newType models.ReactionType) erro
 }
 
 func DeleteReaction(reaction *models.Reaction) error {
-	return config.DB.Unscoped().Delete(reaction).Error
+	return config.DB.Unscoped().Where("id = ?", reaction.ID).Delete(&models.Reaction{}).Error
 }
 
 func GetReactionCountsByPostID(postID uint) (likes int64, dislikes int64, err error) {
