@@ -31,5 +31,6 @@ func SetupRoutes(router *gin.Engine) {
 	protected.DELETE("/posts/:id", handlers.DeletePost)
 	protected.POST("/upload", handlers.UploadImage)
 	protected.POST("/posts/:id/comments", handlers.CreateComment)
+	protected.DELETE("/comments/:id", handlers.DeleteComment)
 
 }
