@@ -11,8 +11,8 @@ func SetupRoutes(router *gin.Engine) {
 	router.GET("/api/health", handlers.HealthCheck)
 	router.GET("/api/posts", handlers.GetPosts)
 	router.GET("/api/categories", handlers.GetCategories)
-
 	router.GET("/api/posts/:id", handlers.GetPostByID)
+	router.GET("/api/posts/:id/comments", handlers.GetCommentsByPostID)
 
 	auth := router.Group("/api/auth")
 
