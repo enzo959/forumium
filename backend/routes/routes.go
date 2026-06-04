@@ -13,6 +13,7 @@ func SetupRoutes(router *gin.Engine) {
 	router.GET("/api/categories", handlers.GetCategories)
 	router.GET("/api/posts/:id", handlers.GetPostByID)
 	router.GET("/api/posts/:id/comments", handlers.GetCommentsByPostID)
+	router.GET("/api/users/:id/profile", handlers.GetUserProfile)
 
 	auth := router.Group("/api/auth")
 
@@ -33,5 +34,6 @@ func SetupRoutes(router *gin.Engine) {
 	protected.POST("/posts/:id/comments", handlers.CreateComment)
 	protected.DELETE("/comments/:id", handlers.DeleteComment)
 	protected.POST("/posts/:id/react", handlers.ReactToPost)
+	
 
 }
