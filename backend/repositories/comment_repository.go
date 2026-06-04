@@ -20,3 +20,7 @@ func GetCommentsByPostID(postID uint) ([]models.Comment, error) {
 
 	return comments, nil
 }
+
+func CreateComment(comment *models.Comment) error {
+	return config.DB.Create(comment).Error
+}
