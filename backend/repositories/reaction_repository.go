@@ -10,7 +10,7 @@ import (
 
 func GetReactionByUserAndPost(userID uint, postID uint) (*models.Reaction, error) {
 	var reaction models.Reaction
-	err := config.DB.Where("user_id = ? AND post_id = ?", userID, postID).First(&reaction).Error
+	err := config.DB.Unscoped().Where("user_id = ? AND post_id = ?", userID, postID).First(&reaction).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
