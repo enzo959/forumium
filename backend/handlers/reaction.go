@@ -69,7 +69,6 @@ func ReactToPost(c *gin.Context) {
 			}
 		}
 	} else {
-		// Pas de réaction → créer
 		reaction := models.Reaction{
 			UserID: userID,
 			PostID: postID,
