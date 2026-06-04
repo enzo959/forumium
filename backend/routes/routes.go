@@ -32,5 +32,6 @@ func SetupRoutes(router *gin.Engine) {
 	protected.POST("/upload", handlers.UploadImage)
 	protected.POST("/posts/:id/comments", handlers.CreateComment)
 	protected.DELETE("/comments/:id", handlers.DeleteComment)
+	protected.POST("/posts/:id/react", handlers.ReactToPost)
 
 }
