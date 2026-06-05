@@ -37,6 +37,8 @@ function PostDetail() {
   const { isAuthenticated, user } = useAuth()
   const [post, setPost] = useState<Post | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
+  const [likes, setLikes] = useState(0)
+  const [dislikes, setDislikes] = useState(0)
   const [newComment, setNewComment] = useState('')
   const [commentError, setCommentError] = useState('')
   const [commentLoading, setCommentLoading] = useState(false)
@@ -53,6 +55,8 @@ function PostDetail() {
           axios.get(`/api/posts/${id}/comments`),
         ])
         setPost(postRes.data)
+        setLikes(postRes.data.likes)
+        setDislikes(postRes.data.dislikes)
         setComments(commentsRes.data.comments)
       } catch {
         setError('Post introuvable ou erreur serveur.')
@@ -136,6 +140,15 @@ function PostDetail() {
               className="prose max-w-none text-gray-700 border-t border-gray-100 pt-6"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
+
+            <div className="flex gap-4 mt-6 pt-4 border-t border-gray-100">
+              <span className="flex items-center gap-1 text-sm text-gray-500">
+                👍 {likes}
+              </span>
+              <span className="flex items-center gap-1 text-sm text-gray-500">
+                👎 {dislikes}
+              </span>
+            </div>
           </div>
         )}
 
