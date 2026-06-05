@@ -67,6 +67,26 @@ function PostDetail() {
     fetchPost()
   }, [id, location.key])
 
+  const handleReact = async (type: 'like' | 'dislike') => {
+    const prevLikes = likes
+    const prevDislikes = dislikes
+
+    if (type === 'like') {
+      setLikes((prev) => prev + 1)
+    } else {
+      setDislikes((prev) => prev + 1)
+    }
+
+    try {
+      const res = await axios.post(`/api/posts/${id}/react`, { type })
+      setLikes(res.data.likes)
+      setDislikes(res.data.dislikes)
+    } catch {
+      setLikes(prevLikes)
+      setDislikes(prevDislikes)
+    }
+  }
+
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
     setCommentError('')
@@ -141,13 +161,28 @@ function PostDetail() {
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 
-            <div className="flex gap-4 mt-6 pt-4 border-t border-gray-100">
-              <span className="flex items-center gap-1 text-sm text-gray-500">
-                👍 {likes}
-              </span>
-              <span className="flex items-center gap-1 text-sm text-gray-500">
-                👎 {dislikes}
-              </span>
+            <div className="flex gap-3 mt-6 pt-4 border-t border-gray-100">
+              {isAuthenticated ? (
+                <>
+                  <button
+                    onClick={() => handleReact('like')}
+                    className="flex items-center gap-1 px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100"
+                  >
+                    👍 {likes}
+                  </button>
+                  <button
+                    onClick={() => handleReact('dislike')}
+                    className="flex items-center gap-1 px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100"
+                  >
+                    👎 {dislikes}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="flex items-center gap-1 text-sm text-gray-500">👍 {likes}</span>
+                  <span className="flex items-center gap-1 text-sm text-gray-500">👎 {dislikes}</span>
+                </>
+              )}
             </div>
           </div>
         )}
