@@ -74,11 +74,27 @@ function PostDetail() {
 
     setCommentLoading(true)
 
+    const optimisticComment: Comment = {
+      id: Date.now(),
+      content: newComment,
+      created_at: new Date().toISOString(),
+      author: {
+        id: user?.id || 0,
+        username: user?.username || '',
+        avatar: '',
+      },
+    }
+    setComments((prev) => [...prev, optimisticComment])
+    setNewComment('')
+
     try {
-      await axios.post(`/api/posts/${id}/comments`, { content: newComment })
-      setNewComment('')
+      const res = await axios.post(`/api/posts/${id}/comments`, { content: optimisticComment.content })
+      setComments((prev) =>
+        prev.map((c) => (c.id === optimisticComment.id ? { ...optimisticComment, id: res.data.id } : c))
+      )
     } catch {
-      setCommentError('Erreur lors de l\'envoi du commentaire.')
+      setComments((prev) => prev.filter((c) => c.id !== optimisticComment.id))
+      setCommentError("Erreur lors de l'envoi du commentaire.")
     } finally {
       setCommentLoading(false)
     }
