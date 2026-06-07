@@ -13,6 +13,8 @@ type Post = {
   User: { username: string }
   Categories: { name: string }[]
   CreatedAt: string
+  likes: number
+  dislikes: number
 }
 
 type Category = {
@@ -62,6 +64,32 @@ function Home() {
     fetchPosts()
   }, [page, location.key])
 
+  const handleReact = async (postID: number, type: 'like' | 'dislike') => {
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.ID === postID
+          ? { ...p, likes: type === 'like' ? p.likes + 1 : p.likes, dislikes: type === 'dislike' ? p.dislikes + 1 : p.dislikes }
+          : p
+      )
+    )
+
+    try {
+      const res = await axios.post(`/api/posts/${postID}/react`, { type })
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.ID === postID ? { ...p, likes: res.data.likes, dislikes: res.data.dislikes } : p
+        )
+      )
+    } catch {
+      const res = await axios.get(`/api/posts/${postID}`)
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.ID === postID ? { ...p, likes: res.data.likes, dislikes: res.data.dislikes } : p
+        )
+      )
+    }
+  }
+
   const filteredPosts = selectedCategory
     ? posts.filter((post) =>
         post.Categories?.some((cat) => cat.name === selectedCategory)
@@ -81,19 +109,14 @@ function Home() {
 
       {isAuthenticated && (
         <div className="max-w-4xl mx-auto px-4 pt-6 flex justify-end">
-          <a
-            href="/posts/new"
-            className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
-          >
+          <a href="/posts/new" className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700">
             + Créer un post
           </a>
         </div>
       )}
 
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          Derniers posts
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Derniers posts</h2>
 
         <div className="flex flex-wrap gap-2 mb-6">
           <button
@@ -131,18 +154,10 @@ function Home() {
           {filteredPosts.map((post) => (
             <div key={post.ID} className="bg-white rounded shadow-sm p-5 hover:shadow-md transition">
               {post.image && (
-                <img
-                  src={post.image}
-                  alt={post.title}
-                  className="w-full max-h-48 object-cover rounded mb-3"
-                />
+                <img src={post.image} alt={post.title} className="w-full max-h-48 object-cover rounded mb-3" />
               )}
-              <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                {post.title}
-              </h3>
-              <p className="text-sm text-gray-600 mb-3">
-                {getExcerpt(post.content)}
-              </p>
+              <h3 className="text-lg font-semibold text-gray-800 mb-1">{post.title}</h3>
+              <p className="text-sm text-gray-600 mb-3">{getExcerpt(post.content)}</p>
               <p className="text-sm text-gray-400 mb-3">
                 Par <span className="font-medium text-gray-600">{post.User?.username}</span>
                 {' · '}
@@ -151,30 +166,52 @@ function Home() {
               {post.Categories && post.Categories.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-3">
                   {post.Categories.map((cat) => (
-                    <span
-                      key={cat.name}
-                      className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded-full"
-                    >
+                    <span key={cat.name} className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded-full">
                       {cat.name}
                     </span>
                   ))}
                 </div>
               )}
-              <div className="flex justify-end gap-2">
-                {isAuthenticated && user?.id === post.userId && (
+              <div className="flex justify-between items-center mt-2">
+                <div className="flex gap-2">
+                  {isAuthenticated ? (
+                    <>
+                      <button
+                        onClick={() => handleReact(post.ID, 'like')}
+                        className="flex items-center gap-1 px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100"
+                      >
+                        👍 {post.likes || 0}
+                      </button>
+                      <button
+                        onClick={() => handleReact(post.ID, 'dislike')}
+                        className="flex items-center gap-1 px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100"
+                      >
+                        👎 {post.dislikes || 0}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex items-center gap-1 text-sm text-gray-500">👍 {post.likes || 0}</span>
+                      <span className="flex items-center gap-1 text-sm text-gray-500">👎 {post.dislikes || 0}</span>
+                    </>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {isAuthenticated && user?.id === post.userId && (
+                    <a
+                      href={`/posts/${post.ID}/edit`}
+                      className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-100"
+                    >
+                      Modifier
+                    </a>
+                  )}
                   <a
-                    href={`/posts/${post.ID}/edit`}
-                    className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-100"
+                    href={`/posts/${post.ID}`}
+                    className="px-3 py-1 text-sm text-blue-600 border border-blue-600 rounded hover:bg-blue-50"
                   >
-                    Modifier
+                    Voir le post
                   </a>
-                )}
-                <a
-                  href={`/posts/${post.ID}`}
-                  className="px-3 py-1 text-sm text-blue-600 border border-blue-600 rounded hover:bg-blue-50"
-                >
-                  Voir le post
-                </a>
+                </div>
               </div>
             </div>
           ))}
