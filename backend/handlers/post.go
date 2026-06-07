@@ -13,6 +13,12 @@ import (
 	"gorm.io/gorm"
 )
 
+type PostWithCounts struct {
+	models.Post
+	Likes    int `json:"likes"`
+	Dislikes int `json:"dislikes"`
+}
+
 func GetPosts(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
@@ -33,8 +39,26 @@ func GetPosts(c *gin.Context) {
 		return
 	}
 
+	postsWithCounts := []PostWithCounts{}
+	for _, p := range posts {
+		likes := 0
+		dislikes := 0
+		for _, r := range p.Reactions {
+			if r.Type == "like" {
+				likes++
+			} else if r.Type == "dislike" {
+				dislikes++
+			}
+		}
+		postsWithCounts = append(postsWithCounts, PostWithCounts{
+			Post:     p,
+			Likes:    likes,
+			Dislikes: dislikes,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"posts": posts,
+		"posts": postsWithCounts,
 		"pagination": gin.H{
 			"page":  page,
 			"limit": limit,
@@ -44,14 +68,11 @@ func GetPosts(c *gin.Context) {
 }
 
 func GetPostByID(c *gin.Context) {
-
 	rawID := c.Param("id")
 
 	parsedID, err := strconv.ParseUint(rawID, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid post ID",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
 		return
 	}
 
@@ -67,20 +88,15 @@ func GetPostByID(c *gin.Context) {
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Post not found",
-			})
+			c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Internal server error",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
 	likes := 0
 	dislikes := 0
-
 	for _, reaction := range post.Reactions {
 		if reaction.Type == "like" {
 			likes++
@@ -90,7 +106,6 @@ func GetPostByID(c *gin.Context) {
 	}
 
 	categories := []dtos.CategoryResponse{}
-
 	for _, category := range post.Categories {
 		categories = append(categories, dtos.CategoryResponse{
 			ID:   category.ID,
@@ -118,28 +133,21 @@ func GetPostByID(c *gin.Context) {
 }
 
 func CreatePost(c *gin.Context) {
-
 	userIDValue, exists := c.Get("userID")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
 	userIDStr, ok := userIDValue.(string)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Invalid user ID",
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
 		return
 	}
 
 	parsedID, err := strconv.ParseUint(userIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Invalid user ID",
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
 		return
 	}
 
@@ -148,50 +156,35 @@ func CreatePost(c *gin.Context) {
 	var req dtos.CreatePostRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request body",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
 	if req.Title == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Title is required",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Title is required"})
 		return
 	}
 
 	if req.Content == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Content is required",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Content is required"})
 		return
 	}
 
 	if len(req.CategoryIDs) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "At least one category is required",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "At least one category is required"})
 		return
 	}
 
 	var categories []models.Category
 
-	result := config.DB.
-		Where("id IN ?", req.CategoryIDs).
-		Find(&categories)
-
+	result := config.DB.Where("id IN ?", req.CategoryIDs).Find(&categories)
 	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch categories",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch categories"})
 		return
 	}
 
 	if len(categories) != len(req.CategoryIDs) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "One or more categories not found",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "One or more categories not found"})
 		return
 	}
 
@@ -203,46 +196,28 @@ func CreatePost(c *gin.Context) {
 	}
 
 	result = config.DB.Create(&post)
-
 	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to create post",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create post"})
 		return
 	}
 
-	err = config.DB.
-		Model(&post).
-		Association("Categories").
-		Replace(categories)
-
+	err = config.DB.Model(&post).Association("Categories").Replace(categories)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to associate categories",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to associate categories"})
 		return
 	}
 
-	err = config.DB.
-		Preload("User").
-		Preload("Categories").
-		First(&post, post.ID).Error
-
+	err = config.DB.Preload("User").Preload("Categories").First(&post, post.ID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Post not found",
-			})
+			c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to load post",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load post"})
 		return
 	}
 
 	categories2 := []dtos.CategoryResponse{}
-
 	for _, category := range post.Categories {
 		categories2 = append(categories2, dtos.CategoryResponse{
 			ID:   category.ID,
@@ -269,7 +244,6 @@ func CreatePost(c *gin.Context) {
 	c.JSON(http.StatusCreated, response)
 }
 
-
 func UpdatePost(c *gin.Context) {
 	userIDValue, exists := c.Get("userID")
 	if !exists {
@@ -289,7 +263,6 @@ func UpdatePost(c *gin.Context) {
 		return
 	}
 	userID := uint(parsedUserID)
-
 
 	postIDRaw := c.Param("id")
 	parsedPostID, err := strconv.ParseUint(postIDRaw, 10, 32)
@@ -325,7 +298,7 @@ func UpdatePost(c *gin.Context) {
 	if req.Content != "" {
 		post.Content = req.Content
 	}
-	post.Image = req.Image 
+	post.Image = req.Image
 
 	if err := config.DB.Save(&post).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update post"})
@@ -441,7 +414,5 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Post successfully deleted",
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "Post successfully deleted"})
 }

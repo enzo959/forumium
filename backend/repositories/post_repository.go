@@ -15,6 +15,7 @@ func GetPosts(page int, limit int) ([]models.Post, int64, error) {
 	err := config.DB.
 		Preload("User").
 		Preload("Categories").
+		Preload("Reactions").
 		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).
